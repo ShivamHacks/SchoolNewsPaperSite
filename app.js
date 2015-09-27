@@ -43,10 +43,6 @@ app.use(router);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // router actions
-router.get('/', function (req, res, next) {
-  res.render('index', {});
-});
-
 // Adding articles (TODO: need to put authentication mechanism)
 
 router.get('/add', function (req, res, next) {
@@ -54,34 +50,65 @@ router.get('/add', function (req, res, next) {
 });
 
 router.post('/add', multipartMiddleware, function (req, res) {
+  var articleDate = new Date();
+  articleDate.setDate(1);
+  articleDate.setHours(0,0,0,0);
   var article = {
     title: req.body.atitle,
     author: req.body.aauthor,
     category: req.body.acategory,
-    image: Datauri(req.files.aimage.path),
     link: '/articles/' + encodeURI(req.body.atitle),
+    publishDate: new Date(), // used for display
+    articleDate: articleDate, // used for categorization
     month: req.body.amonth,
+    tags: req.body.atags.split(/,\s*/),
+    image: Datauri(req.files.aimage.path),
     text: req.body.atext.replace(/(?:\r\n|\r|\n)/g, '<br>')
   };
   fs.writeFile('./articles/' + req.body.atitle + '.json', JSON.stringify(article), 'utf8', function() {
     console.log('successful article save');
   });
-
+  //res.redirect('/');
   res.send(200);
 });
 
-// Reading Articles
+// ALSO, how to categorize articles (maybe by date published).
 
-router.get('/articles', function (req, res, next) {
-  var files = fs.readdirSync('./articles');
-  var articles = [];
-  for (var i in files) {
-    if (path.extname(files[i]) == '.json') {
-      articles.push(require('./articles/' + files[i]));
+router.get('/', function (req, res, next) {
+  res.render('index', {
+    articles: getArticles
+  });
+});
+
+router.post('/articles/search', multipartMiddleware, function (req, res) {
+  var search = req.body.asearch.split(' ');
+  var articles = getArticles();
+  var matches = [];
+  for (var i in articles) {
+    if ('tags' in articles[i]) {
+      for (var j in search) {
+        if (articles[i].tags.indexOf(search[j]) > -1) {
+          matches.push(articles[i]);
+        }
+      }
     }
   }
+  if (matches.length > 0) {
+    res.render('articles', {
+      title: 'Search for ' + req.body.asearch,
+      articles: matches
+    });
+  } else {
+    res.render('articles', {
+      title: 'No results found for ' + req.body.asearch 
+    });
+  }
+});
+
+router.get('/articles', function (req, res, next) {
   res.render('articles', {
-    articles: articles
+    title: 'Most recent articles',
+    articles: getArticles
   });
 });
 
@@ -97,8 +124,45 @@ router.get('/articles/:title', function (req, res, next) {
   });
 });
 
+router.get('/articles/tags/:tag', function (req, res, next) {
+  var articles = getArticles();
+  var matches = [];
+  for (var i in articles) {
+    if ('tags' in articles[i]) {
+      if (articles[i].tags.indexOf(req.params.tag) > -1) {
+        matches.push(articles[i]);
+      }
+    }
+  }
+  if (matches.length > 0) {
+    res.render('articles', {
+      title: 'Articles on ' + req.params.tag,
+      articles: matches
+    });
+  } else {
+    res.render('articles', {
+      title: 'No results found for ' + req.params.tag 
+    });
+  }
+});
 
-
+function getArticles() {
+  // RETRIEVE
+  var files = fs.readdirSync('./articles');
+  var articles = [];
+  for (var i in files) {
+    if (path.extname(files[i]) == '.json') {
+      articles.push(require('./articles/' + files[i]));
+    }
+  }
+  // SORT
+  articles.sort(function(a,b){
+    var c = new Date(a.articleDate);
+    var d = new Date(b.articleDate);
+    return d-c;
+  });
+  return articles;
+}
 
 
 

@@ -28,8 +28,14 @@
 			<div class="col-sm-6">
 				<h1 class="text-center">{{title}}</h1><hr>
 				<p><i>by {{author}} in {{category}}</i></p>
+				<p><i>{{publishDate}}</i><p>
 				<img src={{image}} class="img-responsive" alt="article-image"><hr>
 				<p>{{{text}}}</p>
+				<br>
+				<span>Tags: </span>
+				{{#tags}}
+					<a href=tags/{{.}}><button type="button" class="btn btn-default btn-xs">{{.}}</button></a>
+				{{/tags}}
 			</div>
 
 			<div class="col-sm-3"></div>

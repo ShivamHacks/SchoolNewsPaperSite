@@ -43,6 +43,9 @@
 					<div class="form-group">
 						<input type="text" class="form-control" name="amonth" placeholder="Month" required >
 					</div>
+					<div class="form-group">
+						<input type="text" class="form-control" name="atags" placeholder="Tags" required >
+					</div>
 					<textarea class="form-control" name="atext" form="new_article" rows="10" placeholder="Text" required ></textarea><hr>
 					<button type="submit" class="btn btn-default pull-right">Submit</button>
 				</form>
